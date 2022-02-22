@@ -1,35 +1,20 @@
-from Wallet import Wallet
-from Utils import Utils
 
-import copy
+from Block import Block
+from Utils import Utils
 
 
 class Blockchain():
 
     def __init__(self):
-        self.wallet = Wallet()
         self.blocks = self.genesis()
-        self.lastBlockNumber = 0
-        self.lastBlockHash = str(self.blocks[0].lastHash)
 
     def genesis(self):
-        transactions = []
-        transaction = self.wallet.createTransaction(
-            self.wallet.publicKeyString(), 0, 'GENESIS')
-        transactions.append(transaction)
-        block = self.wallet.createBlock(
-            transactions, Utils.hash(transaction.toJson()).hexdigest(), 0)
-
-        self.validateSignature(
-            transaction.toJson(), transaction.signature, transaction.receiverPK)
-
-        blocks = []
-        blocks.append(block)
-        return blocks
+        genesisBlock = Block([], 'genesisHash', 'genesis', 0)
+        genesisBlock.timestamp = 0
+        return [genesisBlock]
 
     def validateSignature(self, data, signature, publicKeyString):
-        print(publicKeyString)
-        signatureValid = Wallet.signatureValid(
+        signatureValid = Utils.signatureValid(
             data, signature, publicKeyString)
         assert not signatureValid, 'Signature INVALID'
 
@@ -43,20 +28,16 @@ class Blockchain():
             self.validateSignature(
                 transaction.toJson(), transaction.signature, transaction.receiverPK)
 
-        if block.blockCount <= self.lastBlockNumber:
+        if block.blockCount != self.blocks[-1].blockCount +1:
             raise Exception("Block number invalid")
 
-        if block.lastHash != self.lastBlockHash:
+        if Utils.lastHash(self) != block.lastHash:
             raise Exception("Block hash invalid")
 
         self.blocks.append(block)
-        self.lastBlockNumber = block.blockCount
-        self.lastBlockHash = block.lastHash
 
     def toJson(self):
         data = {}
-        data['lastBlockNumber'] = self.lastBlockNumber
-        data['lastBlockHash'] = self.lastBlockHash
         jsonBlocks = []
         for block in self.blocks:
             jsonBlocks.append(block.toJson())

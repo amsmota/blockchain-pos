@@ -3,6 +3,7 @@ from Wallet import Wallet
 from TransactionPool import TransactionPool
 from Block import Block
 from Blockchain import Blockchain
+from Utils import Utils
 
 import pprint
 
@@ -23,20 +24,10 @@ if __name__ == '__main__':
 
     blockchain = Blockchain()
 
-    pprint.pprint(blockchain.toJson())
-    pprint.pprint('===========================')
+    block = wallet.createBlock(pool.transactions, Utils.lastHash(blockchain), Utils.blockCount(blockchain))
+    blockchain.addBlock(block)
 
-    block = wallet.createBlock(pool.transactions, blockchain.lastBlockHash, blockchain.lastBlockNumber+1)
-
-    # signatureValid = Wallet.signatureValid(
-    #     block.payload(), block.signature, wallet.publicKeyString())
-    # assert signatureValid, 'Wallet signature OK'
-
-    # signatureInvalid = Wallet.signatureValid(
-    #     block.payload(), block.signature, fraudWallet.publicKeyString())
-    # assert not signatureInvalid, 'Fraud signature failed'
-
-   
+    block = wallet.createBlock(pool.transactions, Utils.lastHash(blockchain), Utils.blockCount(blockchain))
     blockchain.addBlock(block)
 
     pprint.pprint(blockchain.toJson())

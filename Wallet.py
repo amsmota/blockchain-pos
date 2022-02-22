@@ -15,15 +15,6 @@ class Wallet():
         signature = signatureSchemaObject.sign(dataHash)
         return signature.hex()
 
-    @staticmethod
-    def signatureValid(data, signature, publicKeyString):
-        signature = bytes.fromhex(signature)
-        dataHash = Utils.hash(data)
-        publicKey = RSA.importKey(publicKeyString)
-        signatureSchemaObject = PKCS1_v1_5.new(publicKey)
-        signatureValid = signatureSchemaObject.verify(dataHash, signature)
-        return signatureValid
-
     def publicKeyString(self):
         publicKeyString = self.keyPair.publickey().exportKey('PEM').decode('utf-8')
         return publicKeyString
