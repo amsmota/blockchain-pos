@@ -13,6 +13,10 @@ class Utils():
         pprint.pprint(data)
 
     @staticmethod
+    def jprint(data):
+        pprint.pprint(json.dumps(data))
+
+    @staticmethod
     def hash(data):
         dataString = json.dumps(data)
         dataBytes = dataString.encode('utf8')

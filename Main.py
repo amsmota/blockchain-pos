@@ -10,13 +10,30 @@ import pprint
 
 if __name__ == '__main__':
 
-    accountModel = AccountModel()
-    wallet = Wallet()
+    blockchain = Blockchain()
+    
+    alice = Wallet()
+    bob = Wallet()
+    exchange = Wallet()
+    forger = Wallet()
 
-    accountModel.addAccount(wallet.publicKeyString(), 100)
+    transaction = exchange.createTransaction(alice.publicKeyString(), 50, 'EXCHANGE')
+    pool = TransactionPool()
+    pool.addTransaction(transaction)
+    coveredecTransactions = blockchain.getCoveredTransactions(pool.transactions)
+    block = forger.createBlock(coveredecTransactions, Utils.lastHash(blockchain), Utils.blockCount(blockchain))
+    blockchain.validateBlock(block)
+    blockchain.addBlock(block)
 
-    accountModel.updateAccount(wallet.publicKeyString(), 10)
+    transaction = alice.createTransaction(bob.publicKeyString(), 50, 'TRANSFER')
+    pool = TransactionPool()
+    pool.addTransaction(transaction)
+    coveredecTransactions = blockchain.getCoveredTransactions(pool.transactions)
+    block = forger.createBlock(coveredecTransactions, Utils.lastHash(blockchain), Utils.blockCount(blockchain))
+    blockchain.validateBlock(block)
+    blockchain.addBlock(block)
 
-    pprint.pprint(accountModel.accounts)
+    pprint.pprint(blockchain.toJson())
+    pprint.pprint(blockchain.accounts.accounts)
 
 
