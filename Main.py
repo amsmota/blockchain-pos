@@ -4,30 +4,19 @@ from TransactionPool import TransactionPool
 from Block import Block
 from Blockchain import Blockchain
 from Utils import Utils
+from AccountModel import AccountModel
 
 import pprint
 
 if __name__ == '__main__':
 
-    amount = 1
-    type = 'TRANSFER'
-
+    accountModel = AccountModel()
     wallet = Wallet()
-    fraudWallet = Wallet()
 
-    pool = TransactionPool()
+    accountModel.addAccount(wallet.publicKeyString(), 100)
 
-    transaction = wallet.createTransaction(fraudWallet.publicKeyString(), amount, type)
+    accountModel.updateAccount(wallet.publicKeyString(), 10)
 
-    if not pool.transactionExists(transaction):
-        pool.addTransaction(transaction)
+    pprint.pprint(accountModel.accounts)
 
-    blockchain = Blockchain()
 
-    block = wallet.createBlock(pool.transactions, Utils.lastHash(blockchain), Utils.blockCount(blockchain))
-    blockchain.addBlock(block)
-
-    block = wallet.createBlock(pool.transactions, Utils.lastHash(blockchain), Utils.blockCount(blockchain))
-    blockchain.addBlock(block)
-
-    pprint.pprint(blockchain.toJson())
