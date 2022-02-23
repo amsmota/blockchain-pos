@@ -15,3 +15,6 @@ class TransactionPool():
                 return True
         return False
 
+    def removeTransactions(self, transactions):
+        None #TBD
+
