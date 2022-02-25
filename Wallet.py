@@ -1,16 +1,22 @@
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-from Utils import Utils
 from Transaction import Transaction
 from Block import Block
+from BlockchainUtils import BlockchainUtils
 
 class Wallet():
 
     def __init__(self):
         self.keyPair = RSA.generate(2048)
 
+    def fromKey(self, file):
+        key = ''
+        with open(file, 'r') as kefile:
+            key = RSA.importKey(kefile.read())
+        self.keyPair = key
+
     def sign(self, data):
-        dataHash = Utils.hash(data)
+        dataHash = BlockchainUtils.hash(data)
         signatureSchemaObject = PKCS1_v1_5.new(self.keyPair)
         signature = signatureSchemaObject.sign(dataHash)
         return signature.hex()
@@ -30,8 +36,3 @@ class Wallet():
         signature = self.sign(block.payload())
         block.sign(signature)
         return block
-
-
-
-
-        

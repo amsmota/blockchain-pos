@@ -16,8 +16,9 @@ class SocketCommunication(Node): ### extends p2pnetwork.node.Node
         self.socketConnector = SocketConnector(ip, port)
         self.mainNodePort = 10001
 
-    def startSocketCommunication(self):
+    def startSocketCommunication(self, blockchainNode):
          ### Start the thread's activity (in p2pnetwork.node.Node)
+        self.blockchainNode = blockchainNode
         self.start()
         self.peerDiscovery.start()
         self.connectToMaintNode()
@@ -48,3 +49,6 @@ class SocketCommunication(Node): ### extends p2pnetwork.node.Node
         message = BlockchainUtils.decode(json.dumps(data))
         if message.messageType == 'DISCOVERY':
             self.peerDiscovery.handleMessage(message)
+        elif message.messageType == 'TRANSACTION':
+            transaction = message.data
+            self.blockchainNode.incomingTransaction(transaction)

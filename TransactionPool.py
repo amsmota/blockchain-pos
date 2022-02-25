@@ -16,5 +16,9 @@ class TransactionPool():
         return False
 
     def removeTransactions(self, transactions):
-        None #TBD
+        for transaction in transactions:
+            self.transactions.remove(transaction)
+            
+    def forgerRequired(self):
+        return len(self.transactions) >= 2
 

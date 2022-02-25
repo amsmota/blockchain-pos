@@ -18,7 +18,7 @@ class PeerDiscovery():
         while True:
             print('Current Connections:')
             for peer in self.socketCommunication.peers:
-                print(str(peer.ip) + ':' + str(peer.port))
+                print('   ' + str(peer.ip) + ':' + str(peer.port))
             time.sleep(10)
 
     def discovery(self):

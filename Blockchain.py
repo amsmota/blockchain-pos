@@ -1,14 +1,14 @@
 
 from Block import Block
-from Utils import Utils
+from BlockchainUtils import BlockchainUtils
+from ProofOfStake import ProofOfStake
 from AccountModel import AccountModel
-
-
 class Blockchain():
 
     def __init__(self):
         self.blocks = self.genesis()
         self.accounts = AccountModel()
+        self.pos = ProofOfStake()
 
     def genesis(self):
         genesisBlock = Block([], 'genesisHash', 'genesis', 0)
@@ -16,19 +16,18 @@ class Blockchain():
         return [genesisBlock]
 
     def validateSignature(self, data, signature, publicKeyString):
-        signatureValid = Utils.signatureValid(
+        signatureValid = BlockchainUtils.signatureValid(
             data, signature, publicKeyString)
         assert not signatureValid, 'Signature INVALID'
 
     def validateBlock(self, block):
-        # 0) validate signatures
-        # 1) set the correct number
-        # 2) set the correct hashes
-
+        # 1) validate the correct number
+        # 2) validate the correct hashes
+        # 3) validate signatures
         if block.blockCount != self.blocks[-1].blockCount + 1:
             raise Exception("Block number invalid")
 
-        if Utils.lastHash(self) != block.lastHash:
+        if BlockchainUtils.lastHash(self) != block.lastHash:
             raise Exception("Block hash invalid")
 
         for transaction in block.transactions:
@@ -67,11 +66,23 @@ class Blockchain():
             return coveredTransactions
 
     def executeTransaction(self, transaction):
-        self.accounts.updateAccount(
-                transaction.senderPK, -transaction.amount)
-        self.accounts.updateAccount(
-                transaction.receiverPK, transaction.amount)
+        senderPK = transaction.senderPK
+        receiverPK = transaction.receiverPK
+        amount = transaction.amount
+        if transaction.type == 'STAKE':
+            if senderPK == receiverPK:
+                self.pos.update(senderPK, amount)
+                self.accounts.updateAccount(senderPK, -amount)
+        else:
+            self.accounts.updateAccount(senderPK, -amount)
+            self.accounts.updateAccount(receiverPK, amount)
 
     def executeTransactions(self, transactions):
-         for transaction in transactions:
-             self.executeTransaction(transaction)
+        for transaction in transactions:
+            self.executeTransaction(transaction)
+
+    def nextForger(self):
+        lastBlockHash = BlockchainUtils.hash(
+            self.blocks[-1].payload()).hexdigest()
+        nextForger = self.pos.forger(lastBlockHash)
+        return nextForger

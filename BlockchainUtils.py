@@ -18,7 +18,7 @@ class BlockchainUtils():
     @staticmethod
     def signatureValid(data, signature, publicKeyString):
         signature = bytes.fromhex(signature)
-        dataHash = hash(data)
+        dataHash = BlockchainUtils.hash(data)
         publicKey = RSA.importKey(publicKeyString)
         signatureSchemaObject = PKCS1_v1_5.new(publicKey)
         signatureValid = signatureSchemaObject.verify(dataHash, signature)
