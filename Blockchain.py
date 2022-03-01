@@ -3,6 +3,8 @@ from Block import Block
 from BlockchainUtils import BlockchainUtils
 from ProofOfStake import ProofOfStake
 from AccountModel import AccountModel
+
+
 class Blockchain():
 
     def __init__(self):
@@ -27,7 +29,8 @@ class Blockchain():
         if block.blockCount != self.blocks[-1].blockCount + 1:
             raise Exception("Block number invalid")
 
-        if BlockchainUtils.lastHash(self) != block.lastHash:
+        # TODO refactor this to recalculate the hash
+        if BlockchainUtils.lastHash(self) != block.lastHash: 
             raise Exception("Block hash invalid")
 
         for transaction in block.transactions:
@@ -86,3 +89,18 @@ class Blockchain():
             self.blocks[-1].payload()).hexdigest()
         nextForger = self.pos.forger(lastBlockHash)
         return nextForger
+
+    def createBlock(self, transactions, forgerWallet):
+        coveredTransactions = self.getCoveredTransactions(transactions)
+        self.executeTransactions(coveredTransactions)
+        newBlock = forgerWallet.createBlock(coveredTransactions, BlockchainUtils.lastHash(
+            self), BlockchainUtils.newBlockNumber(self))
+        self.blocks.append(newBlock)
+        return newBlock
+
+    def transactionExists(self, transaction):
+        for block in self.blocks:
+            for tx in block.transactions:
+                if( transaction.equals(tx)):
+                    return True
+        return False

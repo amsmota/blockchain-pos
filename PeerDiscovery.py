@@ -1,12 +1,13 @@
+from BlockchainUtils import BlockchainUtils
+
 import threading
 import time
-from Message import Message
-from BlockchainUtils import BlockchainUtils
+
 
 class PeerDiscovery():
 
-    def __init__(self, node):
-        self.socketCommunication = node # it's a instance of SocketCommunication
+    def __init__(self, socketCommunication):
+        self.p2p = socketCommunication
 
     def start(self):
         statusThread = threading.Thread(target=self.status, args=[])
@@ -17,43 +18,41 @@ class PeerDiscovery():
     def status(self):
         while True:
             print('Current Connections:')
-            for peer in self.socketCommunication.peers:
+            for peer in self.p2p.peers:
                 print('   ' + str(peer.ip) + ':' + str(peer.port))
             time.sleep(10)
 
     def discovery(self):
         while True:
             handshakeMessage = self.handshakeMessage()
-            self.socketCommunication.broadcast(handshakeMessage)
+            self.p2p.broadcast(handshakeMessage)
             time.sleep(10)
 
     def handshake(self, node):
-        self.socketCommunication.send(node, self.handshakeMessage())
+        self.p2p.send(node, self.handshakeMessage())
 
     def handshakeMessage(self):
-        connector = self.socketCommunication.socketConnector
-        peers = self.socketCommunication.peers
-        data = peers
-        type = 'DISCOVERY'
-        message = Message(connector, type, data)
-        encodedMessage = BlockchainUtils.encode(message)
+        encodedMessage = BlockchainUtils.createEncodedMessage(
+                self.p2p.socketConnector, 'DISCOVERY', self.p2p.peers)
         return encodedMessage
 
     def handleMessage(self, message):
         peerConnector = message.connector
         peersPeerList = message.data
         newPeer = True
-        for peer in self.socketCommunication.peers:
+        for peer in self.p2p.peers:
             if peer.equals(peerConnector):
                 newPeer = False
         if newPeer:
-            self.socketCommunication.peers.append(peerConnector)
+            print("Adding new node " + message.connector.ip+":"+ str(message.connector.port))
+            self.p2p.peers.append(peerConnector)
 
         for peersPeer in peersPeerList:
             knownPeer = False
-            for peer in self.socketCommunication.peers:
+            for peer in self.p2p.peers:
                 if peer.equals(peersPeer):
                     knownPeer = True
-            if not knownPeer and not peersPeer.equals(self.socketCommunication.socketConnector):
-                self.socketCommunication.connect_with_node(peersPeer.ip, peersPeer.port)
+            if not knownPeer and not peersPeer.equals(self.p2p.socketConnector):
+                print("Connecting to new node " + message.connector.ip+":"+ str(message.connector.port))
+                self.p2p.connect_with_node(peersPeer.ip, peersPeer.port)
 

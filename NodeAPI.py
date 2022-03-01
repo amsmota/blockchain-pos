@@ -6,6 +6,7 @@ from BlockchainUtils import BlockchainUtils
 # global
 blockNode = None
 
+
 class NodeAPI(FlaskView):
 
     def __init__(self):
@@ -23,6 +24,30 @@ class NodeAPI(FlaskView):
     def info(self):
         return "info", 200
 
+    @route('/pkey', methods=['GET'])
+    def pkey(self):
+        return blockNode.wallet.publicKeyString(), 200
+
+    @route('/accounts', methods=['GET'])
+    def accounts(self):
+        return blockNode.blockchain.accounts.accounts, 200
+
+    @route('/stakes', methods=['GET'])
+    def stakes(self):
+        return blockNode.blockchain.pos.stakers, 200
+
+    @route('/stakes/<amount>', methods=['GET'])
+    def stake(self, amount):
+        stake = int(amount)
+        wallet = blockNode.wallet
+        transaction = wallet.createTransaction(
+            wallet.publicKeyString(), stake, 'EXCHANGE')
+        blockNode.incomingTransaction(transaction)
+        transaction = wallet.createTransaction(
+            wallet.publicKeyString(), stake, 'STAKE')
+        blockNode.incomingTransaction(transaction)
+        return blockNode.blockchain.pos.stakers, 200
+
     @route('/blockchain', methods=['GET'])
     def blockchain(self):
         return blockNode.blockchain.toJson(), 200
@@ -38,8 +63,10 @@ class NodeAPI(FlaskView):
     def transaction(self):
         values = request.get_json()
         if not 'transaction' in values:
+            print("Missing transaction.")
             return "Missing transaction.", 400
         transaction = BlockchainUtils.decode(values['transaction'])
         blockNode.incomingTransaction(transaction)
         response = {'message': 'Received transaction'}
+        print("Received transaction from API")
         return jsonify(response), 201

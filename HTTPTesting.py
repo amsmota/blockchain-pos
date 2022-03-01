@@ -12,16 +12,23 @@ if __name__ == '__main__':
     transaction = exchange.createTransaction(
         alice.publicKeyString(), 100, 'EXCHANGE')
 
-    url = 'http://localhost:5000/transaction'
-    package = {'transaction': BlockchainUtils.encode(transaction)}
-    request = requests.post(url, json=package)
-    print(request.text)
-
-    transaction = alice.createTransaction(
-        bob.publicKeyString(), 10, 'TRANSACTION')
-
     url = 'http://localhost:5001/transaction'
     package = {'transaction': BlockchainUtils.encode(transaction)}
     request = requests.post(url, json=package)
     print(request.text)
 
+    transaction = alice.createTransaction(
+        bob.publicKeyString(), 90, 'TRANSACTION')
+
+    url = 'http://localhost:5002/transaction'
+    package = {'transaction': BlockchainUtils.encode(transaction)}
+    request = requests.post(url, json=package)
+    print(request.text)
+
+    # transaction = bob.createTransaction(
+    # bob.publicKeyString(), 45, 'STAKE')
+
+    # url = 'http://localhost:5001/transaction'
+    # package = {'transaction': BlockchainUtils.encode(transaction)}
+    # request = requests.post(url, json=package)
+    # print(request.text)

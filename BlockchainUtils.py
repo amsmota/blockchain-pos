@@ -1,10 +1,10 @@
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
+from Message import Message
 
 import json
 import jsonpickle
-
 
 class BlockchainUtils():
 
@@ -26,10 +26,10 @@ class BlockchainUtils():
 
     @staticmethod
     def lastHash(blockchain):
-        return hash(blockchain.blocks[-1].payload()).hexdigest()
+        return BlockchainUtils.hash(blockchain.blocks[-1].payload()).hexdigest()
 
     @staticmethod
-    def blockCount(blockchain):
+    def newBlockNumber(blockchain):
         return blockchain.blocks[-1].blockCount + 1
 
     @staticmethod
@@ -39,5 +39,12 @@ class BlockchainUtils():
     @staticmethod
     def decode(data):
         return jsonpickle.decode(data)
+
+    @staticmethod
+    def createEncodedMessage(connector, type, data):
+         message = Message(connector, type, data)
+         message = BlockchainUtils.encode(message)
+         return message
+
 
 

@@ -16,9 +16,16 @@ class TransactionPool():
         return False
 
     def removeTransactions(self, transactions):
-        for transaction in transactions:
-            self.transactions.remove(transaction)
+        newPoolTransactions = []
+        for poolTransaction in self.transactions:
+            insert = True
+            for transaction in transactions:
+                if poolTransaction.equals(transaction):
+                    insert = False
+            if insert == True:
+                newPoolTransactions.append(poolTransaction)
+        self.transactions = newPoolTransactions
             
     def forgerRequired(self):
-        return len(self.transactions) >= 2
+        return len(self.transactions) >= 1
 
