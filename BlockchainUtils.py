@@ -25,7 +25,7 @@ class BlockchainUtils():
         return signatureValid
 
     @staticmethod
-    def lastHash(blockchain):
+    def lastBlockHash(blockchain):
         return BlockchainUtils.hash(blockchain.blocks[-1].payload()).hexdigest()
 
     @staticmethod

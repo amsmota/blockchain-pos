@@ -42,10 +42,10 @@ class NodeAPI(FlaskView):
         wallet = blockNode.wallet
         transaction = wallet.createTransaction(
             wallet.publicKeyString(), stake, 'EXCHANGE')
-        blockNode.incomingTransaction(transaction)
+        blockNode.handleTransaction(transaction)
         transaction = wallet.createTransaction(
             wallet.publicKeyString(), stake, 'STAKE')
-        blockNode.incomingTransaction(transaction)
+        blockNode.handleTransaction(transaction)
         return blockNode.blockchain.pos.stakers, 200
 
     @route('/blockchain', methods=['GET'])
@@ -66,7 +66,7 @@ class NodeAPI(FlaskView):
             print("Missing transaction.")
             return "Missing transaction.", 400
         transaction = BlockchainUtils.decode(values['transaction'])
-        blockNode.incomingTransaction(transaction)
+        blockNode.handleTransaction(transaction)
         response = {'message': 'Received transaction'}
         print("Received transaction from API")
         return jsonify(response), 201

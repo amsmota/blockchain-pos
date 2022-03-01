@@ -17,28 +17,6 @@ class Blockchain():
         genesisBlock.timestamp = 0
         return [genesisBlock]
 
-    def validateSignature(self, data, signature, publicKeyString):
-        signatureValid = BlockchainUtils.signatureValid(
-            data, signature, publicKeyString)
-        assert not signatureValid, 'Signature INVALID'
-
-    def validateBlock(self, block):
-        # 1) validate the correct number
-        # 2) validate the correct hashes
-        # 3) validate signatures
-        if block.blockCount != self.blocks[-1].blockCount + 1:
-            raise Exception("Block number invalid")
-
-        # TODO refactor this to recalculate the hash
-        if BlockchainUtils.lastHash(self) != block.lastHash: 
-            raise Exception("Block hash invalid")
-
-        for transaction in block.transactions:
-            self.validateSignature(
-                transaction.toJson(), transaction.signature, transaction.senderPK)
-            self.validateSignature(
-                transaction.toJson(), transaction.signature, transaction.receiverPK)
-
     def addBlock(self, block):
         # update accounts
         self.executeTransactions(block.transactions)
@@ -53,11 +31,13 @@ class Blockchain():
         data['blocks'] = jsonBlocks
         return data
 
-    def transactionsCovered(self, transaction):
-        if transaction.type == 'EXCHANGE':
-            return True
-        senderBalance = self.accounts.getbalance(transaction.senderPK)
-        return senderBalance >= transaction.amount
+    def blockCountValid(self, block):
+        return self.blocks[-1].blockCount == block.blockCount - 1
+
+    def lastBlockHashValid(self, block):
+        latestBlockchainBlockHash = BlockchainUtils.hash(
+            self.blocks[-1].payload()).hexdigest()
+        return latestBlockchainBlockHash == block.lastHash
 
     def getCoveredTransactions(self, transactions):
         coveredTransactions = []
@@ -65,8 +45,18 @@ class Blockchain():
             if self.transactionsCovered(transaction):
                 coveredTransactions.append(transaction)
             else:
-                raise Exception("Transaction not covered by the Sender")
+                print("Transaction not covered by the Sender")
             return coveredTransactions
+
+    def transactionsCovered(self, transaction):
+        if transaction.type == 'EXCHANGE':
+            return True
+        senderBalance = self.accounts.getbalance(transaction.senderPK)
+        return senderBalance >= transaction.amount
+
+    def executeTransactions(self, transactions):
+        for transaction in transactions:
+            self.executeTransaction(transaction)
 
     def executeTransaction(self, transaction):
         senderPK = transaction.senderPK
@@ -80,10 +70,6 @@ class Blockchain():
             self.accounts.updateAccount(senderPK, -amount)
             self.accounts.updateAccount(receiverPK, amount)
 
-    def executeTransactions(self, transactions):
-        for transaction in transactions:
-            self.executeTransaction(transaction)
-
     def nextForger(self):
         lastBlockHash = BlockchainUtils.hash(
             self.blocks[-1].payload()).hexdigest()
@@ -93,14 +79,67 @@ class Blockchain():
     def createBlock(self, transactions, forgerWallet):
         coveredTransactions = self.getCoveredTransactions(transactions)
         self.executeTransactions(coveredTransactions)
-        newBlock = forgerWallet.createBlock(coveredTransactions, BlockchainUtils.lastHash(
-            self), BlockchainUtils.newBlockNumber(self))
+        newBlock = forgerWallet.createBlock(coveredTransactions, BlockchainUtils.lastBlockHash(
+            self), len(self.blocks)) #BlockchainUtils.newBlockNumber(self))
         self.blocks.append(newBlock)
         return newBlock
 
     def transactionExists(self, transaction):
         for block in self.blocks:
             for tx in block.transactions:
-                if( transaction.equals(tx)):
+                if(transaction.equals(tx)):
                     return True
         return False
+
+    def forgerValid(self, block):
+        forgerPublicKey = self.pos.forger(block.lastHash)
+        proposedBlockForger = block.forger
+        if forgerPublicKey == proposedBlockForger:
+            return True
+        else:
+            return False
+
+    def transactionsValid(self, transactions):
+        coveredTransactions = self.getCoveredTransactions(transactions)
+        if len(coveredTransactions) == len(transactions):
+            return True
+        return False
+
+    def validateSignature(self, data, signature, publicKeyString):
+        signatureValid = BlockchainUtils.signatureValid(
+            data, signature, publicKeyString)
+        assert signatureValid, 'Signature INVALID'
+
+    def validateBlock(self, block):
+        # 1) validate the correct block number
+        # 2) validate the correct block hashes
+        # 3) validate the correct block forger
+        # 4) validate the block signature
+        # 5) validate the transactions
+        # 6) validate the transactions signatures
+
+        # if block.blockCount != self.blocks[-1].blockCount + 1:
+        #     raise Exception("Block number INVALID")
+
+        # if BlockchainUtils.lastBlockHash(self) != block.lastHash:
+        #     raise Exception("Block hash INVALID")
+
+        forgerPublicKey = self.pos.forger(block.lastHash)  # ?????
+        proposedBlockForger = block.forger
+        if forgerPublicKey != proposedBlockForger:
+            raise Exception("Forger INVALID")
+
+        self.validateSignature(
+            block.payload(), block.signature, block.forger)
+
+        coveredTransactions = self.getCoveredTransactions(block.transactions)
+        if len(coveredTransactions) != len(block.transactions):
+            raise Exception("Transactions INVALID")
+
+        for transaction in block.transactions:
+            self.validateSignature(
+                transaction.toJson(), transaction.signature, transaction.senderPK)
+            self.validateSignature(
+                transaction.toJson(), transaction.signature, transaction.receiverPK)
+
+        return True

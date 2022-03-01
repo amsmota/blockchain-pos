@@ -8,11 +8,12 @@ if __name__ == '__main__':
 
     dport = sys.argv[-1]
     if dport.startswith('--debug'):
-        dport = dport[8:12]
-        debugpy.listen(int(dport))
+        debugpy.listen(int(dport[9:13]))
         print("Debugger listening on port: " + dport)
-        debugpy.wait_for_client()
-        debugpy.breakpoint()
+        if dport.startswith('--debugp'):
+            print('Wainting for debug client...')
+            debugpy.wait_for_client()
+            debugpy.breakpoint()
     else:
         dport = None
 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     keyFile = None
     if len(sys.argv) > 4 and not sys.argv[4].startswith('--debug'):
         keyFile = sys.argv[4]
-        print(keyFile)
+
 
     node = BlockchainNode(ip, port, keyFile)
     node.startP2P()
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     exchange = Wallet()
     transaction = exchange.createTransaction(
         node.wallet.publicKeyString(), 1000, 'EXCHANGE')
-    node.incomingTransaction(transaction)
+    node.handleTransaction(transaction)
 
     node.startAPI(apiPort)
 

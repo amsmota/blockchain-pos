@@ -52,9 +52,14 @@ class SocketCommunication(Node): ### extends p2pnetwork.node.Node
         elif message.messageType == 'TRANSACTION':
             transaction = message.data
             print("Syncronizing transaction...")
-            self.blockchainNode.incomingTransaction(transaction)
+            self.blockchainNode.handleTransaction(transaction)
         elif message.messageType == 'BLOCK':
             block = message.data
             print("Syncronizing BLOCK...")
-            self.blockchainNode.addBlock(block)
+            self.blockchainNode.handleBlock(block)
+        elif message.messageType == 'BLOCKCHAINREQUEST':
+            self.blockchainNode.handleBlockchainRequest(node)
+        elif message.messageType == 'BLOCKCHAINUPDATE':
+            blockchain = message.data
+            self.blockchainNode.handleBlockchainUpdate(blockchain)
            
