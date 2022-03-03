@@ -46,5 +46,9 @@ class BlockchainUtils():
          message = BlockchainUtils.encode(message)
          return message
 
-
+    @staticmethod
+    def broadcastMessage(p2p, type, data):
+         message = Message(p2p.socketConnector, type, data)
+         message = BlockchainUtils.encode(message)
+         p2p.broadcast(message)
 

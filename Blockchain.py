@@ -9,6 +9,7 @@ class Blockchain():
 
     def __init__(self):
         self.blocks = self.genesis()
+        self.blockIds = {}
         self.accounts = AccountModel()
         self.pos = ProofOfStake()
 
@@ -18,10 +19,12 @@ class Blockchain():
         return [genesisBlock]
 
     def addBlock(self, block):
-        # update accounts
-        self.executeTransactions(block.transactions)
-        # add to blockchain
+        if self.blockIds.get(block.blockCount) != None:
+            print("BLOCK INVALID!!!!!!!!!!!!!!!!!!!!!")
+            return
+        self.executeTransactions(block.transactions)  # update accounts too
         self.blocks.append(block)
+        self.blockIds[block.blockCount] = block.forger
 
     def toJson(self):
         data = {}
@@ -46,7 +49,7 @@ class Blockchain():
                 coveredTransactions.append(transaction)
             else:
                 print("Transaction not covered by the Sender")
-            return coveredTransactions
+        return coveredTransactions
 
     def transactionsCovered(self, transaction):
         if transaction.type == 'EXCHANGE':
@@ -86,8 +89,8 @@ class Blockchain():
 
     def transactionExists(self, transaction):
         for block in self.blocks:
-            for tx in block.transactions:
-                if(transaction.equals(tx)):
+            for blockTransaction in block.transactions:
+                if transaction.equals(blockTransaction):
                     return True
         return False
 
@@ -108,8 +111,7 @@ class Blockchain():
     def validateSignature(self, data, signature, publicKeyString):
         signatureValid = BlockchainUtils.signatureValid(
             data, signature, publicKeyString)
-        assert signatureValid, 'Signature INVALID'
-
+        return signatureValid
     def validateBlock(self, block):
         # 1) validate the correct block number
         # 2) validate the correct block hashes

@@ -1,4 +1,5 @@
 import copy
+import time
 from Blockchain import Blockchain
 from Message import Message
 from NodeAPI import NodeAPI
@@ -23,6 +24,7 @@ class BlockchainNode():
     def startP2P(self):
         self.p2p = SocketCommunication(self.ip, self.port)
         self.p2p.startSocketCommunication(self)
+        self.requestChain()
 
     def startAPI(self, apiPort):
         self.api = NodeAPI()
@@ -36,15 +38,22 @@ class BlockchainNode():
         transactionInBlock = self.blockchain.transactionExists(transaction)
         if not transactionInPool and validSignature and not transactionInBlock:
             self.transactionPool.addTransaction(transaction)
-            encodedMessage = BlockchainUtils.createEncodedMessage(
-                self.p2p.socketConnector, 'TRANSACTION', transaction)
-            self.p2p.broadcast(encodedMessage)
+            BlockchainUtils.broadcastMessage(self.p2p, 'TRANSACTION', transaction)
             # New block?
             forgingRequired = self.transactionPool.forgerRequired()
             if forgingRequired:
-                self.forge()
+                self.forgeNewBlock()
 
-    # def handleBlock(self, block):
+    def forgeNewBlock(self):
+        forger = self.blockchain.nextForger()
+        if forger == self.wallet.publicKeyString():
+            block = self.blockchain.createBlock(self.transactionPool.transactions, self.wallet)
+            self.transactionPool.removeTransactions(block.transactions)
+            BlockchainUtils.broadcastMessage(self.p2p, 'BLOCK', block)
+            print("Creating block " + str(block.blockCount))
+            time.sleep(1)
+
+    # def handleBlockchainSync(self, block):
     #     blockCountValid = self.blockchain.blockCountValid(block)
     #     if not blockCountValid:
     #         self.requestChain()
@@ -55,32 +64,39 @@ class BlockchainNode():
     #     message = BlockchainUtils.createEncodedMessage(self.p2p.socketConnector, 'BLOCK', block)
     #     self.p2p.broadcast(message)
 
-    def handleBlock(self, block):
+    def handleBlockchainSync(self, block):
         forger = block.forger
         blockHash = block.payload()
         signature = block.signature
-
+        print("Syncronizing block " + str(block.blockCount))
         blockCountValid = self.blockchain.blockCountValid(block)
         lastBlockHashValid = self.blockchain.lastBlockHashValid(block)
         forgerValid = self.blockchain.forgerValid(block)
         transactionsValid = self.blockchain.transactionsValid(
             block.transactions)
-        signatureValid = BlockchainUtils.signatureValid(blockHash, signature, forger)
+        signatureValid = BlockchainUtils.signatureValid(
+            blockHash, signature, forger)
         if not blockCountValid:
             self.requestChain()
         if lastBlockHashValid and forgerValid and transactionsValid and signatureValid:
             self.blockchain.addBlock(block)
             self.transactionPool.removeTransactions(block.transactions)
-            message = Message(self.p2p.socketConnector, 'BLOCK', block)
-            self.p2p.broadcast(BlockchainUtils.encode(message))
+            # in the original code, is this really necessary?
+            # message = Message(self.p2p.socketConnector, 'BLOCK', block)
+            # self.p2p.broadcast(BlockchainUtils.encode(message))
+            time.sleep(1)
+        else:
+            print("Syncronizing failed due to "
+                    + ("lastBlockHashValid" if lastBlockHashValid else ""
+                    + "forgerValid" if forgerValid else ""
+                    + "transactionsValid" if transactionsValid else ""
+                    + "signatureValid" if signatureValid else ""))
 
     def requestChain(self):
-        message = BlockchainUtils.createEncodedMessage(self.p2p.socketConnector, 'BLOCKCHAINREQUEST', None)
-        self.p2p.broadcast(message)
+        BlockchainUtils.broadcastMessage(self.p2p, 'BLOCKCHAINREQUEST', None)
 
     def handleBlockchainRequest(self, node):
-        message = BlockchainUtils.createEncodedMessage(self.p2p.socketConnector, 'BLOCKCHAINUPDATE', self.blockchain)
-        self.p2p.send(node, message)
+        BlockchainUtils.broadcastMessage(self.p2p, 'BLOCKCHAINUPDATE', self.blockchain)
 
     def handleBlockchainUpdate(self, receivedBlockchain):
         localBlockchainCopy = copy.deepcopy(self.blockchain)
@@ -91,17 +107,5 @@ class BlockchainNode():
                 if blockNumber >= localBlockchainCount:
                     localBlockchainCopy.addBlock(block)
                     self.transactionPool.removeTransactions(block.transactions)
+                    print('Adding update block ' + str(block.blockCount))
             self.blockchain = localBlockchainCopy
-
-    def forge(self):
-        forger = self.blockchain.nextForger()
-        if forger == self.wallet.publicKeyString():
-            block = self.blockchain.createBlock(
-                self.transactionPool.transactions, self.wallet)
-            self.transactionPool.removeTransactions(block.transactions)
-            encodedMessage = BlockchainUtils.createEncodedMessage(
-                self.p2p.socketConnector, 'BLOCK', block)
-            self.p2p.broadcast(encodedMessage)
-            print("I'm the Forger that created block " + str(block.blockCount))
-        else:
-            print("I'm NOT a forger")

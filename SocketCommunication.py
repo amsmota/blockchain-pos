@@ -51,12 +51,14 @@ class SocketCommunication(Node): ### extends p2pnetwork.node.Node
             self.peerDiscovery.handleMessage(message)
         elif message.messageType == 'TRANSACTION':
             transaction = message.data
-            print("Syncronizing transaction...")
             self.blockchainNode.handleTransaction(transaction)
         elif message.messageType == 'BLOCK':
             block = message.data
-            print("Syncronizing BLOCK...")
-            self.blockchainNode.handleBlock(block)
+            # is this really needed? (my own code)
+            if block.forger == self.blockchainNode.wallet.publicKeyString():
+                print("Message to self, ignoring...")
+            else:
+                self.blockchainNode.handleBlockchainSync(block)
         elif message.messageType == 'BLOCKCHAINREQUEST':
             self.blockchainNode.handleBlockchainRequest(node)
         elif message.messageType == 'BLOCKCHAINUPDATE':

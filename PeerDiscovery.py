@@ -20,7 +20,7 @@ class PeerDiscovery():
             print('Current Connections:')
             for peer in self.p2p.peers:
                 print('   ' + str(peer.ip) + ':' + str(peer.port))
-            time.sleep(10)
+            time.sleep(30)
 
     def discovery(self):
         while True:

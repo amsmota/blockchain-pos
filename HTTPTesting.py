@@ -1,34 +1,32 @@
-from urllib import request
+import time
 from Wallet import Wallet
 from BlockchainUtils import BlockchainUtils
 import requests
 
+
+def postTransaction(sender, receiver, amount, type):
+    transaction = sender.createTransaction(
+        receiver.publicKeyString(), amount, type)
+    url = "http://localhost:5001/transaction"
+    package = {'transaction': BlockchainUtils.encode(transaction)}
+    request = requests.post(url, json=package)
+
+
 if __name__ == '__main__':
 
-    alice = Wallet()
     bob = Wallet()
+    alice = Wallet()
+    alice.fromKey('keys/stakerPrivateKey.pem')
     exchange = Wallet()
 
-    transaction = exchange.createTransaction(
-        alice.publicKeyString(), 100, 'EXCHANGE')
+    #forger: genesis
+    # postTransaction(exchange, alice, 100, 'EXCHANGE')
+    # postTransaction(exchange, bob, 100, 'EXCHANGE')
+    # postTransaction(alice, alice, 25, 'STAKE')
 
-    url = 'http://localhost:5001/transaction'
-    package = {'transaction': BlockchainUtils.encode(transaction)}
-    request = requests.post(url, json=package)
-    print(request.text)
+    # forger: probably alice
+    for n in range(10):
+        postTransaction(alice, bob, n+1, 'TRANSFER')
+        time.sleep(1)
 
-    transaction = alice.createTransaction(
-        bob.publicKeyString(), 90, 'TRANSACTION')
 
-    url = 'http://localhost:5002/transaction'
-    package = {'transaction': BlockchainUtils.encode(transaction)}
-    request = requests.post(url, json=package)
-    print(request.text)
-
-    # transaction = bob.createTransaction(
-    # bob.publicKeyString(), 45, 'STAKE')
-
-    # url = 'http://localhost:5001/transaction'
-    # package = {'transaction': BlockchainUtils.encode(transaction)}
-    # request = requests.post(url, json=package)
-    # print(request.text)
