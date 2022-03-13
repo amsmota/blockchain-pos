@@ -20,9 +20,11 @@ class NodeAPI(FlaskView):
         global blockNode
         blockNode = node
 
-    @route('/info', methods=['GET'])
-    def info(self):
-        return "info", 200
+    @route('/pool/limit/<limit>', methods=['GET'])
+    def blocklimit(self, limit):
+        limit = int(limit)
+        blockNode.transactionPool.setBlockLimit(limit)
+        return "Transaction Pool Limit set to "+str(limit), 200
 
     @route('/pkey', methods=['GET'])
     def pkey(self):

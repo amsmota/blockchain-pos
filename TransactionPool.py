@@ -5,6 +5,10 @@ class TransactionPool():
 
     def __init__(self):
         self.transactions = []
+        self.blocklimit = 1
+
+    def setBlockLimit(self, limit):
+        self.blocklimit = limit
 
     def addTransaction(self, transaction):
         self.transactions .append(transaction)
@@ -27,5 +31,5 @@ class TransactionPool():
         self.transactions = newPoolTransactions
             
     def forgerRequired(self):
-        return len(self.transactions) >= 1
+        return len(self.transactions) >= self.blocklimit
 

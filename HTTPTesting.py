@@ -20,9 +20,8 @@ if __name__ == '__main__':
     exchange = Wallet()
 
     #forger: genesis
-    # postTransaction(exchange, alice, 100, 'EXCHANGE')
-    # postTransaction(exchange, bob, 100, 'EXCHANGE')
-    # postTransaction(alice, alice, 25, 'STAKE')
+    postTransaction(exchange, alice, 100, 'EXCHANGE')
+    postTransaction(exchange, bob, 100, 'EXCHANGE')
 
     # forger: probably alice
     for n in range(10):
